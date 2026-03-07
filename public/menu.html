@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu - Basaveshwar Hotel</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/menu.css">
+</head>
+
+<body>
+
+    <!-- Floating Shapes for Background -->
+    <div class="floating-shape" style="width: 300px; height: 300px; top: 10%; left: -5%;"></div>
+    <div class="floating-shape"
+        style="width: 400px; height: 400px; bottom: 10%; right: -5%; background: var(--secondary); opacity: 0.3;"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="scroll-progress"></div>
+        <a href="/" class="nav-brand">
+            <i class="fa-solid fa-utensils"></i> Basaveshwar Hotel
+        </a>
+        <ul class="nav-links">
+            <li><a href="/">Home</a></li>
+            <li><a href="/menu.html" class="active">Menu</a></li>
+            <li><a href="/#about">About us</a></li>
+            <li><a href="/#contact">Contact</a></li>
+        </ul>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <a href="/preorder.html" id="cart-counter" class="nav-btn">
+                <i class="fa-solid fa-shopping-basket"></i> 0
+            </a>
+        </div>
+    </nav>
+
+    <!-- Menu Header -->
+    <div class="menu-header reveal">
+        <h1>Our Authentic Menu</h1>
+        <p>Experience the rich flavors of our traditional South Indian kitchen</p>
+        <div class="language-toggle">
+            <button class="lang-btn active" onclick="setLanguage('en')">English</button>
+            <button class="lang-btn" onclick="setLanguage('hi')">हिंदी</button>
+            <button class="lang-btn" onclick="setLanguage('kn')">ಕನ್ನಡ</button>
+        </div>
+    </div>
+
+    <!-- Menu Categories Container -->
+    <div id="menu-container">
+        <!-- Initial Skeleton Loaders -->
+        <div class="menu-category">
+            <div class="category-title-container">
+                <div style="width: 200px; height: 30px;" class="skeleton"></div>
+            </div>
+            <div class="menu-grid">
+                <div class="menu-card skeleton" style="height: 400px;"></div>
+                <div class="menu-card skeleton" style="height: 400px;"></div>
+                <div class="menu-card skeleton" style="height: 400px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Redesign -->
+    <footer>
+        <div class="footer-content stagger-reveal">
+            <div class="footer-col">
+                <div class="nav-brand" style="margin-bottom: 1.5rem; color: white;">
+                    <i class="fa-solid fa-utensils"></i> Basaveshwar Hotel
+                </div>
+                <p>Authentic South Indian pure vegetarian restaurant serving quality food with tradition and love.
+                    Experience the taste of Kalaburagi.</p>
+                <div class="social-links">
+                    <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="#" aria-label="Twitter"><i class="fa-brands fa-twitter"></i></a>
+                </div>
+            </div>
+
+            <div class="footer-col links">
+                <h3>Quick Links</h3>
+                <a href="/">Home</a>
+                <a href="/menu.html">Our Menu</a>
+                <a href="/preorder.html">Pre-Order</a>
+                <a href="/admin/login.html">Staff Login</a>
+            </div>
+
+            <div class="footer-col">
+                <h3>Contact Info</h3>
+                <div class="contact-info">
+                    <p><i class="fa-solid fa-location-dot"></i> Kotnoor, Kalaburagi 585106</p>
+                    <p><i class="fa-solid fa-phone"></i> +91 9876543210</p>
+                    <p><i class="fa-solid fa-envelope"></i> info@basaveshwarhotel.com</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2004 Basaveshwar Hotel. All Rights Reserved. | <a href="/admin/login.html"
+                    style="color: inherit; text-decoration: none; opacity: 0.8;">Staff Access</a></p>
+        </div>
+    </footer>
+
+    <!-- Side Cart Panel -->
+    <div class="cart-overlay" onclick="closeCart()"></div>
+    <div class="cart-panel">
+        <div class="cart-header">
+            <h3>Your Selection</h3>
+            <button class="close-cart" onclick="closeCart()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="side-cart-items" style="flex-grow: 1; overflow-y: auto;">
+            <!-- Items added dynamically -->
+        </div>
+        <div class="cart-footer" style="margin-top: 2rem; padding-top: 1rem; border-top: 2px solid var(--cream);">
+            <div
+                style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold; margin-bottom: 1.5rem;">
+                <span>Total Amount:</span>
+                <span id="side-cart-total">₹0</span>
+            </div>
+            <a href="/preorder.html" class="btn-premium" style="width: 100%; border: none; justify-content: center;">
+                Go to Checkout <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <script src="/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchMenu();
+            if (typeof updateCartCounter === 'function') updateCartCounter();
+        });
+
+        let currentLang = 'en';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+
+            // Apply premium fade transition
+            const names = document.querySelectorAll('.menu-name');
+            names.forEach(name => {
+                name.style.opacity = '0';
+                name.style.transform = 'translateY(10px) scale(0.95)';
+                setTimeout(() => {
+                    const isEn = name.classList.contains('menu-name-en');
+                    const isHi = name.classList.contains('menu-name-hi');
+                    const isKn = name.classList.contains('menu-name-kn');
+
+                    if (lang === 'en' && isEn) name.style.display = 'block';
+                    else if (lang === 'hi' && isHi) name.style.display = 'block';
+                    else if (lang === 'kn' && isKn) name.style.display = 'block';
+                    else name.style.display = 'none';
+
+                    // Trigger reflow for animation
+                    void name.offsetWidth;
+                    name.style.opacity = '1';
+                    name.style.transform = 'translateY(0) scale(1)';
+                }, 400);
+            });
+        }
+
+        async function fetchMenu() {
+            const container = document.getElementById('menu-container');
+            const counterEl = document.getElementById('cart-counter');
+
+            try {
+                // Fetch data
+                const response = await fetch('/api/menu');
+                if (!response.ok) throw new Error('Failed to fetch menu');
+                const items = await response.json();
+
+                // Smooth skeleton transition
+                await new Promise(r => setTimeout(r, 600));
+
+                const categories = {
+                    'Breakfast': items.filter(i => i.category === 'Breakfast'),
+                    'Lunch/Dinner': items.filter(i => i.category === 'Lunch/Dinner'),
+                    'Snacks': items.filter(i => i.category === 'Snacks')
+                };
+
+                container.innerHTML = '';
+
+                for (const [categoryName, categoryItems] of Object.entries(categories)) {
+                    if (categoryItems.length === 0) continue;
+
+                    let html = `
+                    <div class="menu-category reveal">
+                        <div class="category-title-container">
+                            <h2>${categoryName}</h2>
+                            <div class="category-line"></div>
+                        </div>
+                        <div class="menu-grid stagger-reveal">
+                    `;
+
+                    categoryItems.forEach(item => {
+                        const isAvailable = item.is_available === 1;
+                        html += `
+                            <div class="menu-card">
+                                ${!isAvailable ? '<span class="out-of-stock">Out of Stock</span>' : ''}
+                                <div class="menu-img-container">
+                                    <img src="${item.image_url || 'https://via.placeholder.com/400x300?text=Basaveshwar+Hotel'}" 
+                                         alt="${item.english_name}" class="menu-img" loading="lazy" 
+                                         onerror="this.src='https://via.placeholder.com/400x300?text=Basaveshwar+Hotel';">
+                                </div>
+                                <div class="menu-details">
+                                    <div class="menu-name menu-name-en" style="display: ${currentLang === 'en' ? 'block' : 'none'}">${item.english_name}</div>
+                                    <div class="menu-name menu-name-hi" style="display: ${currentLang === 'hi' ? 'block' : 'none'}">${item.hindi_name}</div>
+                                    <div class="menu-name menu-name-kn" style="display: ${currentLang === 'kn' ? 'block' : 'none'}">${item.kannada_name}</div>
+                                    <div class="menu-price">₹${item.price}</div>
+                                </div>
+                                <button class="cart-btn" onclick="addToCart({id: ${item.id}, name: '${item.english_name.replace(/'/g, "\\'")}', price: ${item.price}, image: '${item.image_url}'})" ${!isAvailable ? 'disabled title="Out of stock" style="background: #ccc; cursor: not-allowed; box-shadow: none;"' : ''}>
+                                    ${isAvailable ? '<i class="fa-solid fa-cart-plus"></i> Add to Cart' : 'Unavailable'}
+                                </button>
+                            </div>
+                        `;
+                    });
+
+                    html += `</div></div>`;
+                    container.innerHTML += html;
+                }
+
+                // Re-initialize scroll reveal for dynamic content
+                if (typeof initScrollReveal === 'function') initScrollReveal();
+
+            } catch (error) {
+                console.error('Error fetching menu:', error);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 100px 5%; color: #666;" class="reveal active">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size: 5rem; color: var(--primary); margin-bottom: 2rem;"></i>
+                        <h2>Oops! Menu Unreachable</h2>
+                        <p>We're having trouble serving you right now. Please check if our servers are online.</p>
+                        <button onclick="location.reload()" class="btn-primary" style="margin-top: 2rem;">Refresh Page</button>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+
+</html>

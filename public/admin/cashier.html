@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cashier Dashboard - Basaveshwar Hotel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+        .order-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--admin-primary);
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .order-id {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .order-time {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .order-details {
+            margin-bottom: 1rem;
+        }
+
+        .order-details strong {
+            display: inline-block;
+            width: 100px;
+        }
+
+        /* Modal Info */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            border-radius: var(--radius);
+            padding: 2rem;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .btn-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #888;
+            cursor: pointer;
+        }
+
+        .bill-calc {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .calc-row.final {
+            font-weight: bold;
+            font-size: 1.2rem;
+            border-top: 1px solid #ddd;
+            padding-top: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .pay-mode {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .pay-btn {
+            flex: 1;
+            padding: 1rem;
+            font-size: 1.1rem;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: 600;
+        }
+
+        .pay-btn.selected {
+            border-color: var(--admin-primary);
+            background: #e3f2fd;
+            color: var(--admin-primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fa-solid fa-utensils"></i> Basaveshwar</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="cashier.html" class="active"><i class="fa-solid fa-file-invoice"></i> Pending Orders</a>
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="topbar">
+                <div class="user-info">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span id="user-name">Cashier</span>
+                    <span class="status-badge status-primary" id="user-role"
+                        style="background:#e3f2fd; color:#1565C0;">Cashier</span>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="handleAttendance('clock-in')" id="btn-clock-in">Clock
+                        In</button>
+                    <button class="btn btn-danger" onclick="handleAttendance('clock-out')" id="btn-clock-out"
+                        style="display:none">Clock Out</button>
+                    <button class="btn-logout" onclick="logout()" style="margin-left:15px;"><i
+                            class="fa-solid fa-right-from-bracket"></i> Logout</button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <h2 class="card-title">Pending Orders to Bill</h2>
+                <div class="grid-4" id="orders-container">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Billing Modal -->
+    <div class="modal" id="billModal">
+        <div class="modal-content">
+            <button class="btn-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            <h2 style="margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid #eee;">Settle Bill #<span
+                    id="bill-id"></span></h2>
+
+            <div id="bill-details" style="margin-bottom:1rem; color:#666;">
+                <!-- Info populated dynamically -->
+            </div>
+
+            <table class="admin-table" style="margin-bottom:1rem;">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Qty</th>
+                        <th style="text-align:right;">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody id="bill-items">
+                    <!-- Items -->
+                </tbody>
+            </table>
+
+            <div class="bill-calc">
+                <div class="calc-row">
+                    <span>Subtotal:</span>
+                    <span id="bill-subtotal">₹0</span>
+                </div>
+                <div class="calc-row" style="align-items:center;">
+                    <span>Discount (Rs):</span>
+                    <input type="number" id="bill-discount" value="0" min="0" onchange="calculateFinal()"
+                        style="width:80px; padding:0.3rem; text-align:right;">
+                </div>
+                <div class="calc-row final">
+                    <span>Payable Amount:</span>
+                    <span id="bill-final" style="color:var(--admin-primary)">₹0</span>
+                </div>
+            </div>
+
+            <h3 style="margin-top:2rem;">Payment Mode</h3>
+            <div class="pay-mode">
+                <button class="pay-btn selected" id="btn-cash" onclick="selectPayMode('Cash')"><i
+                        class="fa-solid fa-money-bill"></i> Cash</button>
+                <button class="pay-btn" id="btn-upi" onclick="selectPayMode('UPI')"><i class="fa-solid fa-qrcode"></i>
+                    UPI</button>
+            </div>
+
+            <button class="btn btn-success" style="width:100%; padding:1.2rem; font-size:1.1rem; margin-top:2rem;"
+                onclick="processPayment()">Complete Payment & Print</button>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script>
+        let pendingOrders = [];
+        let currentBill = null;
+        let selectedPayMode = 'Cash';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadPendingOrders();
+            // Automatically refresh every 30 seconds
+            setInterval(loadPendingOrders, 30000);
+        });
+
+        async function loadPendingOrders() {
+            try {
+                const res = await apiCall('/api/orders/pending');
+                if (res.ok) {
+                    pendingOrders = res.data;
+                    renderOrders();
+                }
+            } catch (e) {
+                console.error('Failed to load pending orders', e);
+            }
+        }
+
+        function renderOrders() {
+            const container = document.getElementById('orders-container');
+            container.innerHTML = '';
+
+            if (pendingOrders.length === 0) {
+                container.innerHTML = '<p style="color:#888; grid-column:1/-1;">No pending orders to display.</p>';
+                return;
+            }
+
+            pendingOrders.forEach(o => {
+                const d = new Date(o.created_at);
+                const typeColor = o.order_type === 'Dine-in' ? '#1E88E5' : '#E65100';
+
+                container.innerHTML += `
+                    <div class="order-card" style="border-left-color: ${typeColor}">
+                        <div class="order-header">
+                            <span class="order-id">#${o.id} <span style="font-size:0.8rem; background:${typeColor}22; padding:2px 8px; border-radius:10px; color:${typeColor}; margin-left:10px;">${o.order_type}</span></span>
+                            <span class="order-time">${d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                        <div class="order-details">
+                            ${o.table_number ? `<div><strong>Table:</strong> ${o.table_number}</div>` : ''}
+                            ${o.customer_name ? `<div><strong>Name:</strong> ${o.customer_name}</div>` : ''}
+                            ${o.waiter_name ? `<div><strong>Waiter:</strong> ${o.waiter_name}</div>` : ''}
+                            <div><strong>Amount:</strong> ₹${o.total_amount}</div>
+                        </div>
+                        <button class="btn btn-primary" style="width:100%" onclick="openBillModal(${o.id})">Settle Bill</button>
+                    </div>
+                `;
+            });
+        }
+
+        async function openBillModal(orderId) {
+            try {
+                const res = await apiCall(`/api/orders/${orderId}`);
+                if (res.ok) {
+                    currentBill = res.data;
+
+                    document.getElementById('bill-id').innerText = currentBill.id;
+
+                    let detailsHtml = `<strong>Type:</strong> ${currentBill.order_type} <br>`;
+                    if (currentBill.table_number) detailsHtml += `<strong>Table:</strong> ${currentBill.table_number} <br>`;
+                    if (currentBill.customer_name) detailsHtml += `<strong>Customer:</strong> ${currentBill.customer_name} (${currentBill.customer_mobile}) <br>`;
+
+                    document.getElementById('bill-details').innerHTML = detailsHtml;
+
+                    const itemsContainer = document.getElementById('bill-items');
+                    itemsContainer.innerHTML = '';
+                    currentBill.items.forEach(i => {
+                        itemsContainer.innerHTML += `
+                            <tr>
+                                <td>${i.english_name}</td>
+                                <td>${i.quantity}</td>
+                                <td style="text-align:right;">₹${i.price_at_time * i.quantity}</td>
+                            </tr>
+                        `;
+                    });
+
+                    document.getElementById('bill-subtotal').innerText = `₹${currentBill.total_amount}`;
+                    document.getElementById('bill-discount').value = 0;
+                    document.getElementById('bill-discount').max = currentBill.total_amount;
+                    calculateFinal();
+
+                    selectPayMode('Cash');
+                    document.getElementById('billModal').style.display = 'flex';
+                }
+            } catch (e) {
+                alert('Error fetching order details');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('billModal').style.display = 'none';
+        }
+
+        function calculateFinal() {
+            let discount = parseFloat(document.getElementById('bill-discount').value) || 0;
+            if (discount > currentBill.total_amount) {
+                discount = currentBill.total_amount;
+                document.getElementById('bill-discount').value = discount;
+            }
+            const final = currentBill.total_amount - discount;
+            document.getElementById('bill-final').innerText = `₹${final}`;
+        }
+
+        function selectPayMode(mode) {
+            selectedPayMode = mode;
+            document.getElementById('btn-cash').classList.remove('selected');
+            document.getElementById('btn-upi').classList.remove('selected');
+
+            if (mode === 'Cash') document.getElementById('btn-cash').classList.add('selected');
+            else document.getElementById('btn-upi').classList.add('selected');
+        }
+
+        async function processPayment() {
+            const discount = parseFloat(document.getElementById('bill-discount').value) || 0;
+
+            try {
+                const res = await apiCall(`/api/billing/${currentBill.id}`, 'POST', {
+                    payment_mode: selectedPayMode,
+                    discount: discount
+                });
+
+                if (res.ok) {
+                    // Generate PDF Printout
+                    const invoiceRes = await apiCall(`/api/billing/invoice/${currentBill.id}`);
+                    if (invoiceRes.ok) {
+                        alert('Payment settled. Downloading Invoice PDF...');
+                        window.open(invoiceRes.data.url, '_blank');
+                    } else {
+                        alert('Payment settled, but failed to generate PDF.');
+                    }
+
+                    closeModal();
+                    loadPendingOrders();
+                } else {
+                    alert(res.data.message || 'Payment failed');
+                }
+            } catch (e) {
+                alert('Network error while processing payment');
+            }
+        }
+
+        async function handleAttendance(type) {
+            try {
+                const method = type === 'clock-in' ? 'POST' : 'PUT';
+                const res = await apiCall(`/api/attendance/${type}`, method);
+                if (res.ok) {
+                    alert(`Successfully ${type.replace('-', ' ')} at ${res.data.time}`);
+                    if (type === 'clock-in') {
+                        document.getElementById('btn-clock-in').style.display = 'none';
+                        document.getElementById('btn-clock-out').style.display = 'inline-block';
+                    } else {
+                        document.getElementById('btn-clock-in').style.display = 'inline-block';
+                        document.getElementById('btn-clock-out').style.display = 'none';
+                    }
+                } else {
+                    alert(res.data.message || 'Action failed');
+                }
+            } catch (e) {
+                alert(e.message || 'Error processing attendance');
+            }
+        }
+    </script>
+</body>
+
+</html>

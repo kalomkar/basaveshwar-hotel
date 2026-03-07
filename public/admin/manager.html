@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Dashboard - Basaveshwar Hotel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stat-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .icon-blue {
+            background: #e3f2fd;
+            color: #1E88E5;
+        }
+
+        .icon-green {
+            background: #e8f5e9;
+            color: #4CAF50;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-btn {
+            padding: 1rem 2rem;
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .tab-btn.active {
+            color: var(--admin-primary);
+            border-bottom: 3px solid var(--admin-primary);
+            margin-bottom: -2px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fa-solid fa-utensils"></i> Basaveshwar</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" class="active"><i class="fa-solid fa-chart-pie"></i> Manager Panel</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="topbar">
+                <div class="user-info">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span id="user-name">Manager</span>
+                    <span class="status-badge status-primary" id="user-role"
+                        style="background:#e3f2fd; color:#1565C0;">Manager</span>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="handleAttendance('clock-in')" id="btn-clock-in">Clock
+                        In</button>
+                    <button class="btn btn-danger" onclick="handleAttendance('clock-out')" id="btn-clock-out"
+                        style="display:none">Clock Out</button>
+                    <button class="btn-logout" onclick="logout()" style="margin-left:15px;"><i
+                            class="fa-solid fa-right-from-bracket"></i> Logout</button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('dashboard')">Dashboard</button>
+                    <button class="tab-btn" onclick="switchTab('menu')">Menu Management</button>
+                    <button class="tab-btn" onclick="switchTab('attendance')">Attendance Reports</button>
+                </div>
+
+                <!-- Dashboard Tab -->
+                <div id="tab-dashboard" class="tab-content active">
+                    <div class="grid-4" style="margin-bottom: 2rem;">
+                        <div class="stat-card">
+                            <div class="stat-icon icon-blue"><i class="fa-solid fa-indian-rupee-sign"></i></div>
+                            <div>
+                                <div class="stat-value" id="stat-sales">₹0</div>
+                                <div class="stat-label">Today's Sales</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon icon-green"><i class="fa-solid fa-receipt"></i></div>
+                            <div>
+                                <div class="stat-value" id="stat-orders">0</div>
+                                <div class="stat-label">Today's Orders</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+                        <div class="chart-container">
+                            <h3 style="margin-bottom:1rem; color:#555;">Revenue (Last 7 Days)</h3>
+                            <canvas id="revenueChart" height="100"></canvas>
+                        </div>
+                        <div class="card">
+                            <h3 style="margin-bottom:1rem; color:#555;">Top Selling Items</h3>
+                            <ul id="popular-items-list" style="list-style:none; padding:0;">
+                                <!-- Loaded dynamically -->
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu Management Tab -->
+                <div id="tab-menu" class="tab-content">
+                    <div class="card">
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                            <h2 class="card-title" style="border:none; margin:0;">Menu Items</h2>
+                            <button class="btn btn-primary"
+                                onclick="document.getElementById('addMenuModal').style.display='flex'"><i
+                                    class="fa-solid fa-plus"></i> Add New Item</button>
+                        </div>
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Name (EN/HI/KN)</th>
+                                    <th>Category</th>
+                                    <th>Price</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="menu-table-body">
+                                <!-- Dynamically loaded -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Attendance Tab -->
+                <div id="tab-attendance" class="tab-content">
+                    <div class="card">
+                        <h2 class="card-title">Staff Attendance Log</h2>
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Staff Name</th>
+                                    <th>Role</th>
+                                    <th>Clock In</th>
+                                    <th>Clock Out</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-table-body">
+                                <!-- Dynamically loaded -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Add/Edit Menu Modal -->
+    <div class="modal" id="addMenuModal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
+        <div style="background:white; padding:2rem; border-radius:8px; width:100%; max-width:500px; position:relative;">
+            <button
+                style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.2rem; cursor:pointer;"
+                onclick="document.getElementById('addMenuModal').style.display='none'"><i
+                    class="fa-solid fa-xmark"></i></button>
+            <h2 style="margin-bottom:1.5rem;" id="modal-menu-title">Add Menu Item</h2>
+
+            <form id="menuForm">
+                <input type="hidden" id="menu-id">
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="menu-category" required>
+                        <option value="Breakfast">Breakfast</option>
+                        <option value="Lunch/Dinner">Lunch/Dinner</option>
+                        <option value="Snacks">Snacks</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>English Name</label>
+                    <input type="text" id="menu-en" required>
+                </div>
+                <div class="form-group">
+                    <label>Hindi Name</label>
+                    <input type="text" id="menu-hi" required>
+                </div>
+                <div class="form-group">
+                    <label>Kannada Name</label>
+                    <input type="text" id="menu-kn" required>
+                </div>
+                <div class="form-group">
+                    <label>Price (₹)</label>
+                    <input type="number" step="0.01" id="menu-price" required>
+                </div>
+                <!-- Simulating image upload with URL for simplicity in this system -->
+                <div class="form-group">
+                    <label>Menu Image (Upload)</label>
+                    <input type="file" id="menu-image-file" accept="image/*">
+                    <small style="color:#666; margin-top:5px; display:block;">Or enter image URL below</small>
+                </div>
+                <div class="form-group">
+                    <label>Image URL Path</label>
+                    <input type="text" id="menu-image" placeholder="/images/item.jpg">
+                </div>
+
+                <button type="submit" class="btn btn-success" style="width:100%; padding:1rem;">Save Item</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboard();
+            loadMenuItems();
+            loadAttendance();
+        });
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabId === 'dashboard') loadDashboard();
+            if (tabId === 'menu') loadMenuItems();
+            if (tabId === 'attendance') loadAttendance();
+        }
+
+        async function loadDashboard() {
+            try {
+                const res = await apiCall('/api/reports/dashboard');
+                if (res.ok) {
+                    const data = res.data;
+                    document.getElementById('stat-sales').innerText = `₹${data.todaySales}`;
+                    document.getElementById('stat-orders').innerText = data.todayOrders;
+
+                    // Populate Popular Items
+                    const popList = document.getElementById('popular-items-list');
+                    popList.innerHTML = '';
+                    data.popularItems.forEach(item => {
+                        popList.innerHTML += `
+                            <li style="display:flex; justify-content:space-between; padding:0.8rem 0; border-bottom:1px solid #eee;">
+                                <span>${item.name}</span>
+                                <span style="font-weight:bold; color:var(--admin-primary)">${item.total_sold} sold</span>
+                            </li>
+                        `;
+                    });
+
+                    // Render Chart
+                    renderChart(data.revenueData);
+                }
+            } catch (e) {
+                console.error("Dashboard error", e);
+            }
+        }
+
+        let revenueChartInst = null;
+        function renderChart(data) {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+
+            const labels = data.map(d => new Date(d.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
+            const values = data.map(d => d.revenue);
+
+            if (revenueChartInst) revenueChartInst.destroy();
+
+            revenueChartInst = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Daily Revenue (₹)',
+                        data: values,
+                        borderColor: '#1E88E5',
+                        backgroundColor: 'rgba(30, 136, 229, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // --- Menu Management ---
+        let menuCache = [];
+        async function loadMenuItems() {
+            try {
+                const res = await apiCall('/api/menu');
+                if (res.ok) {
+                    menuCache = res.data;
+                    const tbody = document.getElementById('menu-table-body');
+                    tbody.innerHTML = '';
+
+                    menuCache.forEach(m => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><img src="${m.image_url}" style="width:50px; height:50px; object-fit:cover; border-radius:4px;" onerror="this.src='https://via.placeholder.com/50'"></td>
+                                <td>
+                                    <strong>${m.english_name}</strong><br>
+                                    <small style="color:#666">${m.hindi_name} | ${m.kannada_name}</small>
+                                </td>
+                                <td>${m.category}</td>
+                                <td>₹${m.price}</td>
+                                <td>
+                                    <span class="status-badge ${m.is_available ? 'status-success' : 'status-danger'}">
+                                        ${m.is_available ? 'In Stock' : 'Out of Stock'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-primary" onclick="editMenu(${m.id})" style="padding:0.3rem 0.6rem"><i class="fa-solid fa-pen"></i></button>
+                                    <button class="btn ${m.is_available ? 'btn-danger' : 'btn-success'}" onclick="toggleStock(${m.id}, ${!m.is_available})"  style="padding:0.3rem 0.6rem">
+                                        <i class="fa-solid fa-power-off"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (e) { console.error("Menu list error", e); }
+        }
+
+        function editMenu(id) {
+            const item = menuCache.find(m => m.id === id);
+            if (!item) return;
+
+            document.getElementById('modal-menu-title').innerText = 'Edit Menu Item';
+            document.getElementById('menu-id').value = item.id;
+            document.getElementById('menu-category').value = item.category;
+            document.getElementById('menu-en').value = item.english_name;
+            document.getElementById('menu-hi').value = item.hindi_name;
+            document.getElementById('menu-kn').value = item.kannada_name;
+            document.getElementById('menu-price').value = item.price;
+            document.getElementById('menu-image').value = item.image_url;
+
+            document.getElementById('addMenuModal').style.display = 'flex';
+        }
+
+        document.getElementById('menuForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('menu-id').value;
+
+            let imageUrl = document.getElementById('menu-image').value;
+            const imageFile = document.getElementById('menu-image-file').files[0];
+
+            if (imageFile) {
+                const formData = new FormData();
+                formData.append('image', imageFile);
+                try {
+                    const uploadRes = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const uploadData = await uploadRes.json();
+                    if (uploadRes.ok) {
+                        imageUrl = uploadData.imageUrl;
+                    } else {
+                        alert('Image upload failed: ' + uploadData.message);
+                        return;
+                    }
+                } catch (err) {
+                    alert('Error uploading image');
+                    return;
+                }
+            }
+
+            if (!imageUrl) {
+                alert('Please upload an image or provide an image URL');
+                return;
+            }
+
+            const payload = {
+                category: document.getElementById('menu-category').value,
+                english_name: document.getElementById('menu-en').value,
+                hindi_name: document.getElementById('menu-hi').value,
+                kannada_name: document.getElementById('menu-kn').value,
+                price: parseFloat(document.getElementById('menu-price').value),
+                image_url: imageUrl,
+                is_available: 1
+            };
+
+            try {
+                let res;
+                if (id) {
+                    res = await apiCall(`/api/menu/${id}`, 'PUT', payload);
+                } else {
+                    res = await apiCall('/api/menu', 'POST', payload);
+                }
+
+                if (res.ok) {
+                    document.getElementById('addMenuModal').style.display = 'none';
+                    document.getElementById('menuForm').reset();
+                    document.getElementById('menu-id').value = '';
+                    document.getElementById('menu-image-file').value = '';
+                    loadMenuItems();
+                } else {
+                    alert('Error saving menu item');
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        });
+
+        async function toggleStock(id, is_available) {
+            try {
+                const res = await apiCall(`/api/menu/${id}/availability`, 'PATCH', { is_available: is_available ? 1 : 0 });
+                if (res.ok) loadMenuItems();
+            } catch (e) { alert('Error updating stock status'); }
+        }
+
+        // --- Attendance ---
+        async function loadAttendance() {
+            try {
+                const res = await apiCall('/api/attendance/reports');
+                if (res.ok) {
+                    const tbody = document.getElementById('attendance-table-body');
+                    tbody.innerHTML = '';
+                    res.data.forEach(a => {
+                        const date = new Date(a.date).toLocaleDateString();
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${date}</td>
+                                <td><strong>${a.username}</strong></td>
+                                <td>${a.role.charAt(0).toUpperCase() + a.role.slice(1)}</td>
+                                <td style="color:green"><i class="fa-solid fa-arrow-right-to-bracket"></i> ${a.check_in}</td>
+                                <td style="color:${a.check_out ? 'red' : '#999'}">
+                                    ${a.check_out ? `<i class="fa-solid fa-arrow-right-from-bracket"></i> ${a.check_out}` : 'Not checked out'}
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (e) { console.error("Attendance load error", e); }
+        }
+
+        async function handleAttendance(type) {
+            try {
+                const method = type === 'clock-in' ? 'POST' : 'PUT';
+                const res = await apiCall(`/api/attendance/${type}`, method);
+                if (res.ok) {
+                    alert(`Successfully ${type.replace('-', ' ')} at ${res.data.time}`);
+                    // Refresh if on attendance tab
+                    if (document.getElementById('tab-attendance').classList.contains('active')) {
+                        loadAttendance();
+                    }
+                    if (type === 'clock-in') {
+                        document.getElementById('btn-clock-in').style.display = 'none';
+                        document.getElementById('btn-clock-out').style.display = 'inline-block';
+                    } else {
+                        document.getElementById('btn-clock-in').style.display = 'inline-block';
+                        document.getElementById('btn-clock-out').style.display = 'none';
+                    }
+                } else {
+                    alert(res.data.message || 'Action failed');
+                }
+            } catch (e) {
+                alert(e.message || 'Error processing attendance');
+            }
+        }
+    </script>
+</body>
+
+</html>

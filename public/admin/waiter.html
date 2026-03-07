@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waiter Dashboard - Basaveshwar Hotel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <style>
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .table-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .table-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .table-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-Available {
+            background-color: #e8f5e9;
+            border-color: #4CAF50;
+            color: #2e7d32;
+        }
+
+        .status-Occupied {
+            background-color: #ffebee;
+            border-color: #F44336;
+            color: #c62828;
+        }
+
+        .status-Reserved {
+            background-color: #fff8e1;
+            border-color: #FFC107;
+            color: #ff8f00;
+        }
+
+        /* Order Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 800px;
+            border-radius: var(--radius);
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            overflow: hidden;
+            height: 80vh;
+        }
+
+        .menu-selection {
+            padding: 1.5rem;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        .order-summary {
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-left: 1px solid #ddd;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .menu-item-row button {
+            padding: 0.3rem 0.8rem;
+        }
+
+        .cart-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .cart-controls button {
+            padding: 0.2rem 0.6rem;
+            margin: 0 5px;
+        }
+
+        .total-area {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 2px solid #ddd;
+            text-align: right;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .btn-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fa-solid fa-utensils"></i> Basaveshwar</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="waiter.html" class="active"><i class="fa-solid fa-table"></i> Tables</a></li>
+            </ul>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="topbar">
+                <div class="user-info">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <span id="user-name">Waiter</span>
+                    <span class="status-badge status-primary" id="user-role"
+                        style="background:#e3f2fd; color:#1565C0;">Waiter</span>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="handleAttendance('clock-in')" id="btn-clock-in">Clock
+                        In</button>
+                    <button class="btn btn-danger" onclick="handleAttendance('clock-out')" id="btn-clock-out"
+                        style="display:none">Clock Out</button>
+                    <button class="btn-logout" onclick="logout()" style="margin-left:15px;"><i
+                            class="fa-solid fa-right-from-bracket"></i> Logout</button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <h2 class="card-title" style="border:none; margin-bottom:1.5rem;">Select Table to Order</h2>
+
+                <div class="table-grid" id="tables-container">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Order Modal -->
+    <div class="modal" id="orderModal">
+        <button class="btn-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+        <div class="modal-content">
+            <div class="menu-selection">
+                <h3>Select Items <span id="selected-table-name" style="color:var(--admin-primary)"></span></h3>
+                <div class="form-group" style="margin-top:1rem;">
+                    <input type="text" id="menu-search" placeholder="Search menu items..." onkeyup="filterMenu()">
+                </div>
+                <div id="menu-list">
+                    <!-- Menu items loaded here -->
+                </div>
+            </div>
+
+            <div class="order-summary">
+                <h3>Current Order</h3>
+                <div id="cart-list" style="margin-top:1rem; flex:1; overflow-y:auto;">
+                    <p style="color:#888; text-align:center;">No items added yet</p>
+                </div>
+
+                <div class="total-area">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:1rem;">
+                        <span>Total:</span>
+                        <span id="order-total">₹0</span>
+                    </div>
+                    <button class="btn btn-success" style="width:100%; padding:1rem;" onclick="submitOrder()">Send to
+                        Kitchen / Cashier</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script>
+        let tables = [];
+        let menuItems = [];
+        let currentOrder = [];
+        let activeTableId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchTables();
+            await fetchMenu();
+        });
+
+        async function fetchTables() {
+            try {
+                const response = await apiCall('/api/tables');
+                if (response.ok) {
+                    tables = response.data;
+                    renderTables();
+                }
+            } catch (e) {
+                console.error('Failed to load tables', e);
+            }
+        }
+
+        async function fetchMenu() {
+            try {
+                const response = await apiCall('/api/menu');
+                if (response.ok) {
+                    menuItems = response.data.filter(item => item.is_available);
+                    renderMenu();
+                }
+            } catch (e) {
+                console.error('Failed to load menu', e);
+            }
+        }
+
+        function renderTables() {
+            const container = document.getElementById('tables-container');
+            container.innerHTML = '';
+
+            tables.forEach(t => {
+                const isOccupied = t.status === 'Occupied';
+                container.innerHTML += `
+                    <div class="table-card status-${t.status}" onclick="openTable(${t.id}, ${t.table_number}, '${t.status}')">
+                        <h3>Table ${t.table_number}</h3>
+                        <p>${t.status}</p>
+                        ${isOccupied ? '<small style="display:block;margin-top:5px;opacity:0.8;">Billed at Casheir</small>' : ''}
+                    </div>
+                `;
+            });
+        }
+
+        function renderMenu(searchTerm = '') {
+            const container = document.getElementById('menu-list');
+            container.innerHTML = '';
+
+            menuItems.filter(item => item.english_name.toLowerCase().includes(searchTerm.toLowerCase())).forEach(i => {
+                container.innerHTML += `
+                    <div class="menu-item-row">
+                        <div>
+                            <strong>${i.english_name}</strong>
+                            <div style="color:var(--admin-primary); font-size:0.9rem;">₹${i.price}</div>
+                        </div>
+                        <button class="btn btn-primary" onclick="addItemToOrder(${i.id})">Add</button>
+                    </div>
+                `;
+            });
+        }
+
+        function filterMenu() {
+            const term = document.getElementById('menu-search').value;
+            renderMenu(term);
+        }
+
+        function openTable(id, number, status) {
+            if (status === 'Occupied') {
+                alert('Table is already occupied. Wait for cashier to bill and clear it.');
+                return;
+            }
+            if (status === 'Reserved') {
+                alert('Table is reserved for a Pre-Order.');
+                return;
+            }
+
+            activeTableId = id;
+            currentOrder = [];
+            document.getElementById('selected-table-name').innerText = `(Table ${number})`;
+            renderCart();
+            document.getElementById('orderModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('orderModal').style.display = 'none';
+        }
+
+        function addItemToOrder(itemId) {
+            const menuItem = menuItems.find(i => i.id === itemId);
+            const existing = currentOrder.find(i => i.id === itemId);
+
+            if (existing) {
+                existing.quantity++;
+            } else {
+                currentOrder.push({ id: menuItem.id, name: menuItem.english_name, price: Number(menuItem.price), quantity: 1 });
+            }
+            renderCart();
+        }
+
+        function updateCartQty(idx, delta) {
+            currentOrder[idx].quantity += delta;
+            if (currentOrder[idx].quantity <= 0) {
+                currentOrder.splice(idx, 1);
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-list');
+            if (currentOrder.length === 0) {
+                container.innerHTML = '<p style="color:#888; text-align:center;">No items added yet</p>';
+                document.getElementById('order-total').innerText = '₹0';
+                return;
+            }
+
+            let html = '';
+            let total = 0;
+
+            currentOrder.forEach((item, idx) => {
+                const lineTotal = item.price * item.quantity;
+                total += lineTotal;
+                html += `
+                    <div class="cart-item-row">
+                        <div style="flex:1;">
+                            <strong>${item.name}</strong>
+                            <div style="color:#666; font-size:0.8rem;">₹${item.price} x ${item.quantity} = ₹${lineTotal}</div>
+                        </div>
+                        <div class="cart-controls">
+                            <button class="btn" style="border:1px solid #ddd" onclick="updateCartQty(${idx}, -1)">-</button>
+                            <span>${item.quantity}</span>
+                            <button class="btn" style="border:1px solid #ddd" onclick="updateCartQty(${idx}, 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            document.getElementById('order-total').innerText = `₹${total}`;
+        }
+
+        async function submitOrder() {
+            if (currentOrder.length === 0) {
+                alert('Add items before submitting');
+                return;
+            }
+
+            const totalAmount = currentOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            try {
+                const response = await apiCall('/api/orders/dine-in', 'POST', {
+                    table_id: activeTableId,
+                    items: currentOrder,
+                    total_amount: totalAmount
+                });
+
+                if (response.ok) {
+                    alert('Order sent successfully!');
+                    closeModal();
+                    fetchTables(); // Refresh tables
+                }
+            } catch (e) {
+                alert('Error submitting order');
+            }
+        }
+
+        async function handleAttendance(type) {
+            try {
+                const method = type === 'clock-in' ? 'POST' : 'PUT';
+                const res = await apiCall(`/api/attendance/${type}`, method);
+                if (res.ok) {
+                    alert(`Successfully ${type.replace('-', ' ')} at ${res.data.time}`);
+                    if (type === 'clock-in') {
+                        document.getElementById('btn-clock-in').style.display = 'none';
+                        document.getElementById('btn-clock-out').style.display = 'inline-block';
+                    } else {
+                        document.getElementById('btn-clock-in').style.display = 'inline-block';
+                        document.getElementById('btn-clock-out').style.display = 'none';
+                    }
+                } else {
+                    alert(res.data.message || 'Action failed');
+                }
+            } catch (e) {
+                alert(e.message || 'Error processing attendance');
+            }
+        }
+    </script>
+</body>
+
+</html>
